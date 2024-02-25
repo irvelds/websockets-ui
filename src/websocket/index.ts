@@ -62,6 +62,9 @@ export const managementRequest = (ws: IWebSocket, request: IRequest, msg: string
     case 'attack':
       methodAttack(ws, msg);
       break;
+    case 'randomAttack':
+      methodAttack(ws, msg, true);
+      break;
   }
 };
 

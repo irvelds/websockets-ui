@@ -6,11 +6,18 @@ import { IWebSocket, IAttakaResult, IPosition, IPositionXY, IShipPosition, } fro
 import { clients } from '../websocket';
 import { methodUpdateWinners } from './methodUpdateWinnersTable';
 
+
 export let activePlayer: number = 0;
 
+export const generateRandomCoordinates = (): { x: number; y: number } => {
+    const coordinates = {
+        x: Math.floor(Math.random() * 10),
+        y: Math.floor(Math.random() * 10),
+    };
+    return coordinates;
+};
 
-
-export const methodAttack = (ws: IWebSocket, data: string) => {
+export const methodAttack = (ws: IWebSocket, data: string, random: boolean = false) => {
 
     const parseData = JSON.parse(JSON.parse(data).data);
     const roomId = Number(parseData.gameId.slice(0, 1));
@@ -23,26 +30,46 @@ export const methodAttack = (ws: IWebSocket, data: string) => {
     }
 
     /*Атакуем*/
+    if (random) {
+        const coordinates = generateRandomCoordinates();
+        const resultAttack = getAttack(parseData.indexPlayer, coordinates.x, coordinates.y, existGameInstance);
 
-    if (activePlayer !== parseData.indexPlayer) {
-        console.log('Next player goes');
-        return;
+        const response = {
+            type: 'attack',
+            data: JSON.stringify({
+                position: { x: coordinates.x, y: coordinates.y },
+                currentPlayer: parseData.indexPlayer,
+                status: resultAttack.shipState,
+            }),
+            id: 0,
+        };
+        existGameInstance.wssockets.forEach((wssocket) => {
+            wssocket.send(JSON.stringify(response));
+        });
     }
 
-    const resultAttack = getAttack(parseData.indexPlayer, parseData.x, parseData.y, existGameInstance);
+    if (!random) {
 
-    const response = {
-        type: 'attack',
-        data: JSON.stringify({
-            position: { x: parseData.x, y: parseData.y },
-            currentPlayer: parseData.indexPlayer,
-            status: resultAttack.shipState,
-        }),
-        id: 0,
-    };
-    existGameInstance.wssockets.forEach((wssocket) => {
-        wssocket.send(JSON.stringify(response));
-    });
+        if (activePlayer !== parseData.indexPlayer) {
+            console.log('Next player goes');
+            return;
+        }
+
+        const resultAttack = getAttack(parseData.indexPlayer, parseData.x, parseData.y, existGameInstance);
+
+        const response = {
+            type: 'attack',
+            data: JSON.stringify({
+                position: { x: parseData.x, y: parseData.y },
+                currentPlayer: parseData.indexPlayer,
+                status: resultAttack.shipState,
+            }),
+            id: 0,
+        };
+        existGameInstance.wssockets.forEach((wssocket) => {
+            wssocket.send(JSON.stringify(response));
+        });
+    }
 
     /*Если игра закончилась*/
 
@@ -98,7 +125,6 @@ export const methodAttack = (ws: IWebSocket, data: string) => {
         //     //     socket.send(JSON.stringify(response));
         //     // });
         // }
-
     }
 };
 
@@ -219,7 +245,7 @@ export const openSurroundCells = (indexPlayer: number, index: number, instanceGa
 
 export const getWinnerId = (instanceGame: gameParams): number | null => {
 
-    const firstPlayerShips: IShipPosition = instanceGame.firstPlayerShips as IShipPosition;
+    const firstPlayerShips: IShipPosition  = instanceGame.firstPlayerShips as IShipPosition;
     const secondPlayerShips: IShipPosition = instanceGame.secondPlayerShips;
 
     if (firstPlayerShips.ships.every((ship) => ship.type === 'shot')) {

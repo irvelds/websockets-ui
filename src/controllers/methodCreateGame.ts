@@ -18,19 +18,15 @@ export const createGame = (id: number, ws: IWebSocket) => {
         existGameInstance.wssockets.push(ws);
         const gameId = id + ':' + existGameInstance.gameCounter;
         existGameInstance.gameCounter++;
-        existGameInstance.firstPlayerShips = [];
-        existGameInstance.secondPlayerShips = [];
+
 
         existGameInstance.wssockets.forEach((wssockets, index) => {
-
-            const data = {
-                idGame: gameId,
-                idPlayer: index,
-            };
-
             const response = {
                 type: 'create_game',
-                data: JSON.stringify(data),
+                data: JSON.stringify({
+                    idGame: gameId,
+                    idPlayer: index,
+                }),
                 id: 0,
             };
             wssockets.send(JSON.stringify(response));
