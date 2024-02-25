@@ -1,56 +1,41 @@
 
-import { IPlayer, IRoom } from '../types/types';
-import { Rooms, mapPlayers } from '../state/state';
+import { IRoom } from '../types/types';
+import { Rooms, Players } from '../state/state';
 import { IWebSocket } from '../types/types';
 import { updateRoomList } from './methodUpdateRoom';
 import { createGame } from './methodCreateGame';
+import { clients } from '../websocket';
 
 
 
-export const findFreeRoomId = () =>{
-    const freeRooms:IRoom[] = Rooms.filter(room => room.roomUsers.length < 2);
-    if (freeRooms.length > 0) {
-        return freeRooms[0].roomId;
-    }
-    return null;
-};
+export const methodAddPlayerToRoom = (ws: IWebSocket): void => {
 
-
-export const methodAddPlayerToRoom = (ws: IWebSocket, request: any): void => {
-    console.log(ws.index);
-    const userName = mapPlayers.get(ws);
+    const userName = Players.find((player) => {
+        return player.index === ws.index;
+    })?.name;
 
     if (userName) {
-        const freeRoomId = findFreeRoomId();
+
+        const freeRoomId = Rooms.find((room) => room.roomUsers.length < 2);
+
         if (freeRoomId) {
-            const room = Rooms.find((room) => {
-                return freeRoomId === room.roomId;
+
+            const notAddPlayerRoom = Rooms.find((room) => room.roomId === freeRoomId.roomId);
+            if (notAddPlayerRoom!.roomUsers.find(user => user.indexId === ws.index)) {
+                console.log('This user has already been added to the game, select another');
+                return;
+            }
+
+            const response = addPlayerToRoom(freeRoomId.roomId, userName, ws);
+
+            createGame(freeRoomId.roomId, ws);
+
+
+            clients.forEach((ws) => {
+                ws.send(JSON.stringify(response));
             });
 
-
-            if (room) {
-                // console.log(room);
-
-                //console.log(Rooms);
-
-                // const index = room.roomUsers.find(i => i.indexId)?.indexId;
-
-                // const exist = Rooms.find(e => e.roomUsers.find(i => i.indexId === ws.index));
-                // if (exist) {
-                //     console.log('This user has already been added to the game, select another');
-                //     return;
-                // }
-
-                if (room.roomUsers.find(user => user.indexId === ws.index)) {
-                    console.log('This user has already been added to the game, select another');
-                    return;
-                }
-
-                const response = addPlayerToRoom(freeRoomId, userName, ws);
-                createGame(freeRoomId, ws);
-                ws.send(JSON.stringify(response));
-                updateRoomList(ws);
-            }
+            updateRoomList(ws);
         }
 
     }
@@ -58,10 +43,9 @@ export const methodAddPlayerToRoom = (ws: IWebSocket, request: any): void => {
 };
 
 
+export const addPlayerToRoom = (id: number, userName: string, ws: IWebSocket) => {
 
 
-
-export const addPlayerToRoom = (id: number, name: string, ws: IWebSocket) => {
 
     /*Выбираю комнату */
     const indexRoom = Rooms.findIndex((room) => room.roomId === id);
@@ -73,13 +57,27 @@ export const addPlayerToRoom = (id: number, name: string, ws: IWebSocket) => {
 
     /*Кладу юзеров*/
     const newUser = {
-        name: name,
+        name: userName,
         index,
         indexId: ws.index as string,
     };
 
 
     selectRoom.roomUsers.push(newUser);
+
+
+    if (selectRoom.roomUsers.length >= 2) {
+        console.log('There are already two players in the room');
+        return;
+    }
+
+    // const existGameInstance: gameParams = gameInstances.find(game => game.roomId === id) as gameParams;
+
+    // if (existGameInstance.wssockets.length >= 2) {
+    //     console.log('There are already two players in the room');
+    //     return;
+    // }
+
 
     const response = {
         type: 'add_user_to_room',
@@ -89,4 +87,5 @@ export const addPlayerToRoom = (id: number, name: string, ws: IWebSocket) => {
         id: 0,
     };
     return response;
+
 };

@@ -1,10 +1,8 @@
 
 import { IWebSocket } from '../types/types';
-
-import { activePlayerId, gameCounter, gameInstances, gameParams, firstPlayerShips,
-    secondPlayerShips} from '../state/game';
-import { updateRoomList } from './methodUpdateRoom';
-
+import {
+    currentPlayerId, gameCounter, gameInstances, gameParams
+} from '../state/state';
 
 
 export const createGame = (id: number, ws: IWebSocket) => {
@@ -13,13 +11,13 @@ export const createGame = (id: number, ws: IWebSocket) => {
 
     if (existGameInstance) {
 
-        if (existGameInstance.wssockets.length >= 2) {
-            console.log('There are already two players in the room');
-            return;
-        }
+        // if (existGameInstance.wssockets.length >= 2) {
+        //     console.log('There are already two players in the room');
+        //     return;
+        // }
         existGameInstance.wssockets.push(ws);
         const gameId = id + ':' + existGameInstance.gameCounter;
-        //existGameInstance.gameCounter++
+        existGameInstance.gameCounter++;
         existGameInstance.firstPlayerShips = [];
         existGameInstance.secondPlayerShips = [];
 
@@ -38,8 +36,6 @@ export const createGame = (id: number, ws: IWebSocket) => {
             wssockets.send(JSON.stringify(response));
         });
 
-        // if (existGameInstance.sockets.length === 2) {
-        // }
     }
 
     else {
@@ -47,9 +43,9 @@ export const createGame = (id: number, ws: IWebSocket) => {
             roomId: id,
             wssockets: [ws],
             gameCounter,
-            activePlayerId,
-            firstPlayerShips,
-            secondPlayerShips,
+            currentPlayerId,
+            firstPlayerShips: [],
+            secondPlayerShips: [],
         });
 
     }

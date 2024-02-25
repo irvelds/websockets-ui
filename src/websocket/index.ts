@@ -4,6 +4,11 @@ import { methodRegistration } from '../controllers/methodRegistration';
 import { methodCreateRoom } from '../controllers/methodCreateRoom';
 import { methodAddPlayerToRoom } from '../controllers/methodAddPlayerToRoom';
 import { updateRoomList } from '../controllers/methodUpdateRoom';
+import { methodStartGame } from '../controllers/methodStartGame';
+import { methodAttack} from '../controllers/methodAttack';
+import { methodUpdateWinners } from '../controllers/methodUpdateWinnersTable';
+
+
 
 const webSocketPort = 3000;
 
@@ -23,6 +28,7 @@ wss.on('connection', (ws: IWebSocket) => {
     // for(let client of clients) {
     //   client.send((msg));
     // }
+
     managementRequest(ws, request, msg);
   });
   ws.on('close', () => {
@@ -32,11 +38,14 @@ wss.on('connection', (ws: IWebSocket) => {
   ws.on('error', console.error);
 });
 
-export const managementRequest = (ws: IWebSocket, request: IRequest, msg: any) => {
+export const managementRequest = (ws: IWebSocket, request: IRequest, msg: string) => {
   console.log(request);
   switch (request.type) {
     case 'reg':
       methodRegistration(ws, request);
+      break;
+    case 'update_winners':
+      methodUpdateWinners();
       break;
     case 'create_room':
       methodCreateRoom(ws);
@@ -45,8 +54,15 @@ export const managementRequest = (ws: IWebSocket, request: IRequest, msg: any) =
       updateRoomList(ws);
       break;
     case 'add_user_to_room':
-      methodAddPlayerToRoom(ws, request);
+      methodAddPlayerToRoom(ws);
       break;
-
+    case 'add_ships':
+      methodStartGame(ws, msg);
+      break;
+    case 'attack':
+      methodAttack(ws, msg);
+      break;
   }
 };
+
+

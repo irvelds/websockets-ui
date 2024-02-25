@@ -1,5 +1,5 @@
 import { Rooms } from '../state/state';
-import { IUpdateRoom, IWebSocket } from '../types/types';
+import { IWebSocket } from '../types/types';
 import { clients } from '../websocket';
 
 
